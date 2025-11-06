@@ -6,22 +6,18 @@
     <title>SPIN2MOON - Spin & Win SOL</title>
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="https://unpkg.com/@solana/wallet-adapter-base@0.9.5/dist/umd/index.min.js"></script>
-    <script src="https://unpkg.com/@solana/wallet-adapter-phantom@0.9.5/dist/umd/index.min.js"></script>
-    <script src="https://unpkg.com/@solana/web3.js@1.78.0/lib/index.iife.min.js"></script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
             font-family: 'Orbitron', sans-serif;
-            background: linear-gradient(135deg, #0ahell, #1a0033);
+            background: linear-gradient(135deg, #0a001a, #1a0033);
             color: #fff;
             min-height: 100vh;
             overflow-x: hidden;
-            position: relative;
         }
         .header {
             display: flex; justify-content: space-between; align-items: center;
-            padding: 15px 30px; background: rgba(0,0,0,0.7); border-bottom: 2px solid #8a2be2;
+            padding: 15px 30px; background: rgba(0,0,0,0.8); border-bottom: 2px solid #8a2be2;
             position: fixed; top: 0; width: 100%; z-index: 1000;
         }
         .logo { font-size: 1.8em; background: linear-gradient(45deg, #ff00ff, #00ffff); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
@@ -33,7 +29,7 @@
         #balance { font-size: 1.6em; color: #00ff00; margin: 20px 0; font-weight: bold; }
         #spin-btn { padding: 18px 40px; font-size: 1.4em; background: linear-gradient(45deg, #ff00ff, #8a2be2); border: none; border-radius: 50px; color: white; cursor: pointer; margin: 20px; box-shadow: 0 0 30px rgba(255,0,255,0.4); }
         #spin-btn:disabled { opacity: 0.6; cursor: not-allowed; }
-        #wheel-container { width: 350px; height: 350px; margin: 30px auto; position: relative; }
+        #wheel-container { width: 360px; height: 360px; margin: 30px auto; position: relative; }
         #wheel-canvas { width: 100%; height: 100%; }
         .pointer { position: absolute; top: -15px; left: 50%; transform: translateX(-50%); width: 0; height: 0; border-left: 20px solid transparent; border-right: 20px solid transparent; border-top: 40px solid #ffd700; z-index: 10; }
         #result { font-size: 2.2em; margin: 25px 0; min-height: 60px; font-weight: bold; }
@@ -78,7 +74,7 @@
     <canvas id="confetti" class="confetti"></canvas>
 
     <script>
-        // === Phantom Wallet Connect ===
+        // === Phantom Wallet Connect (Mobil + PC) ===
         const walletBtn = document.getElementById('wallet-btn');
         const balanceEl = document.getElementById('balance');
         const spinBtn = document.getElementById('spin-btn');
@@ -86,39 +82,37 @@
         const withdrawBtn = document.getElementById('withdraw');
         const winnerList = document.getElementById('winner-list');
 
-        let wallet = null;
-        let provider = null;
         let publicKey = null;
         let balance = 0;
         let spinning = false;
 
-        // Initialize Phantom
-        async function initWallet() {
-            if ('solana' in window) {
-                provider = window.solana;
-                if (provider.isPhantom) {
-                    try {
-                        await provider.connect();
-                        publicKey = provider.publicKey.toString();
-                        walletBtn.innerHTML = `${publicKey.slice(0,4)}...${publicKey.slice(-4)}`;
-                        walletBtn.classList.add('connected');
-                        spinBtn.disabled = false;
-                        loadBalance();
-                        return true;
-                    } catch (err) { console.log("User rejected"); }
-                }
-            }
-            alert("Phantom wallet bulunamadı! Lütfen yükleyin.");
-            return false;
-        }
-
         walletBtn.addEventListener('click', async () => {
-            if (!publicKey) {
-                await initWallet();
+            if (publicKey) return;
+
+            // Mobil & PC için güvenli kontrol
+            if (typeof window.solana !== 'undefined' && window.solana?.isPhantom) {
+                try {
+                    const resp = await window.solana.connect();
+                    publicKey = resp.publicKey.toString();
+                    walletBtn.innerHTML = `${publicKey.slice(0,4)}...${publicKey.slice(-4)}`;
+                    walletBtn.classList.add('connected');
+                    spinBtn.disabled = false;
+                    loadBalance();
+                } catch (err) {
+                    alert("Bağlantı reddedildi!");
+                }
+            } else {
+                // Mobil fallback: Phantom app aç
+                const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+                if (isMobile) {
+                    window.location.href = 'https://phantom.app/ul/browse?ref=' + encodeURIComponent(window.location.href);
+                } else {
+                    alert("Lütfen Phantom Wallet eklentisini tarayıcıya yükleyin!");
+                }
             }
         });
 
-        // === Balance System (Wallet-based) ===
+        // === Balance ===
         function loadBalance() {
             if (publicKey) {
                 const key = `spin2moon_${publicKey}`;
@@ -137,18 +131,25 @@
             if (balance >= 3) withdrawBtn.style.display = 'block';
         }
 
-        // === Professional Wheel with Labels ===
+        // === EŞİT ÇARK (5 dilim, her biri 72°) ===
         const ctx = document.getElementById('wheel-canvas').getContext('2d');
         const segments = [
-            { text: 'TRY AGAIN', color: '#333333', percent: 60 },
-            { text: '0.2 SOL', color: '#00ff00', percent: 25 },
-            { text: '0.4 SOL', color: '#ffff00', percent: 10 },
-            { text: '0.6 SOL', color: '#ff9900', percent: 4 },
-            { text: '0.8 SOL', color: '#ff00ff', percent: 1 }
+            { text: 'TRY AGAIN', color: '#1a1a1a' },
+            { text: '0.2 SOL', color: '#00ff00' },
+            { text: '0.4 SOL', color: '#ffff00' },
+            { text: '0.6 SOL', color: '#ff9900' },
+            { text: '0.8 SOL', color: '#ff00ff' }
         ];
-        let chart = new Chart(ctx, {
+        const chart = new Chart(ctx, {
             type: 'doughnut',
-            data: { datasets: [{ data: segments.map(s => s.percent), backgroundColor: segments.map(s => s.color) }] },
+            data: {
+                datasets: [{
+                    data: [1,1,1,1,1],  // Görsel eşitlik
+                    backgroundColor: segments.map(s => s.color),
+                    borderWidth: 3,
+                    borderColor: '#000'
+                }]
+            },
             options: {
                 cutout: '0%',
                 rotation: -90,
@@ -160,31 +161,30 @@
                     const ctx = chart.ctx;
                     const centerX = chart.width / 2;
                     const centerY = chart.height / 2;
-                    const radius = chart.innerRadius + (chart.outerRadius - chart.innerRadius) / 2;
-                    let startAngle = chart.options.rotation * Math.PI / 180;
+                    const radius = chart.outerRadius * 0.65;
+                    let angle = chart.options.rotation * Math.PI / 180;
 
                     segments.forEach(seg => {
-                        const angle = seg.percent / 100 * 2 * Math.PI;
-                        const midAngle = startAngle + angle / 2;
-                        const x = centerX + Math.cos(midAngle) * radius;
-                        const y = centerY + Math.sin(midAngle) * radius;
+                        const mid = angle + Math.PI / 5;
+                        const x = centerX + Math.cos(mid) * radius;
+                        const y = centerY + Math.sin(mid) * radius;
 
                         ctx.save();
                         ctx.translate(x, y);
-                        ctx.rotate(midAngle + Math.PI / 2);
-                        ctx.font = 'bold 16px Orbitron';
+                        ctx.rotate(mid + Math.PI / 2);
+                        ctx.font = 'bold 18px Orbitron';
                         ctx.fillStyle = '#ffffff';
                         ctx.textAlign = 'center';
                         ctx.fillText(seg.text, 0, 0);
                         ctx.restore();
 
-                        startAngle += angle;
+                        angle += 2 * Math.PI / 5;
                     });
                 }
             }]
         });
 
-        // === Spin Logic ===
+        // === Spin ===
         spinBtn.addEventListener('click', () => {
             if (spinning || !publicKey) return;
             spinning = true;
@@ -204,10 +204,10 @@
                 let color = '#ff0000';
 
                 if (rand < 0.60) prize = 0;
-                else if (rand < 0.85) { prize = 0.2; msg = '0.2 SOL! 🎰'; color = '#00ff00'; }
-                else if (rand < 0.95) { prize = 0.4; msg = '0.4 SOL! 🚀'; color = '#ffff00'; }
-                else if (rand < 0.99) { prize = 0.6; msg = '0.6 SOL! 🔥'; color = '#ff9900'; }
-                else { prize = 0.8; msg = 'JACKPOT 0.8 SOL! 🤑'; color = '#ff00ff'; showConfetti(); }
+                else if (rand < 0.85) { prize = 0.2; msg = '0.2 SOL!'; color = '#00ff00'; }
+                else if (rand < 0.95) { prize = 0.4; msg = '0.4 SOL!'; color = '#ffff00'; }
+                else if (rand < 0.99) { prize = 0.6; msg = '0.6 SOL!'; color = '#ff9900'; }
+                else { prize = 0.8; msg = 'JACKPOT 0.8 SOL!'; color = '#ff00ff'; showConfetti(); }
 
                 balance += prize;
                 saveBalance();
@@ -220,17 +220,17 @@
             }, 3200);
         });
 
-        // === Withdraw (Fake) ===
+        // === Withdraw ===
         withdrawBtn.addEventListener('click', () => {
             withdrawBtn.innerText = 'Processing...';
             setTimeout(() => {
-                alert('❌ TX Failed! Try again later.');
+                alert('TX Failed! Try later.');
                 withdrawBtn.innerText = 'WITHDRAW (3 SOL)';
             }, 1500);
         });
 
-        // === Fake Winners (Right Panel) ===
-        const fakeNames = ['4xMoon...', 'DegenX...', 'SolRich...', 'PumpGod...', 'HodlKing...'];
+        // === Fake Winners ===
+        const fakeWallets = ['4xMoon...', 'DegenX...', 'SolRich...', 'PumpGod...', 'HodlKing...'];
         function addWinner(wallet, amount) {
             const li = document.createElement('li');
             li.innerHTML = `<b>${wallet}</b> won <span style="color:#00ff00">${amount} SOL</span>`;
@@ -239,13 +239,13 @@
         }
         setInterval(() => {
             if (Math.random() < 0.3) {
-                const w = fakeNames[Math.floor(Math.random()*5)];
+                const w = fakeWallets[Math.floor(Math.random()*5)];
                 const p = [0.2, 0.4, 0.6, 0.8][Math.floor(Math.random()*4)];
                 addWinner(w, p);
             }
         }, 15000);
 
-        // === Jackpot Confetti ===
+        // === Confetti ===
         function showConfetti() {
             const canvas = document.getElementById('confetti');
             canvas.style.display = 'block';
@@ -254,7 +254,7 @@
             canvas.height = window.innerHeight;
             for (let i = 0; i < 150; i++) {
                 setTimeout(() => {
-                    ctx.fillStyle  = ['#ff00ff', '#00ffff', '#ffd700'][Math.floor(Math.random()*3)];
+                    ctx.fillStyle = ['#ff00ff', '#00ffff', '#ffd700'][Math.floor(Math.random()*3)];
                     ctx.fillRect(Math.random()*canvas.width, Math.random()*canvas.height, 8, 8);
                 }, i * 30);
             }
