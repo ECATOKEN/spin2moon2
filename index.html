@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SPIN2MOON - Spin to Win SOL!</title>
+    <style>
+        body { background: #000; color: white; font-family: 'Arial', sans-serif; margin: 0; padding: 20px; text-align: center; }
+        h1 { font-size: 48px; margin: 20px; color: #ff00ff; }
+        p { font-size: 20px; }
+        #balance { font-size: 24px; margin: 20px; color: #00ff00; }
+        #spinBtn { padding: 18px 40px; font-size: 24px; background: #ff00ff; color: white; border: none; border-radius: 15px; margin: 20px; cursor: pointer; }
+        #wheel { width: 220px; height: 220px; margin: 30px auto; border-radius: 50%; background: conic-gradient(#333 0% 60%, #00ff00 60% 85%, #ffff00 85% 95%, #ff9900 95% 99%, #ff0000 99% 100%); transition: 3s ease-out; border: 5px solid #ff00ff; }
+        #result { font-size: 32px; margin: 20px; min-height: 50px; color: #ffff00; }
+        #withdraw { display: none; background: #00ff00; color: black; padding: 15px 30px; border: none; border-radius: 10px; font-weight: bold; font-size: 18px; cursor: pointer; margin: 20px; }
+        #winner { position: fixed; bottom: 20px; left: 20px; background: rgba(0,255,0,0.9); padding: 15px; border-radius: 10px; color: black; font-weight: bold; display: none; z-index: 999; box-shadow: 0 0 10px #0f0; }
+    </style>
+</head>
+<body>
+    <h1>🔥 SPIN2MOON 🔥</h1>
+    <p><b>Her 100$ $SPIN = 1 Spin</b><br>0.8 SOL'a kadar kazan!</p>
+    
+    <div id="balance">Bakiye: 0 SOL</div>
+    <button onclick="spin()" id="spinBtn">SPIN ÇEVİR</button>
+    
+    <div id="wheel"></div>
+    
+    <div id="result"></div>
+    <button id="withdraw" onclick="withdraw()">WITHDRAW (3 SOL)</button>
+
+    <div id="winner"></div>
+
+    <script>
+        let balance = parseFloat(localStorage.getItem('spinBalance')) || 0;
+        let spinning = false;
+        updateBalance();
+
+        function spin() {
+            if (spinning) return;
+            const btn = document.getElementById('spinBtn');
+            btn.disabled = true;
+            btn.innerText = "ÇEVİRİLİYOR...";
+            spinning = true;
+            
+            document.getElementById('wheel').style.transform = 'rotate(1800deg)';
+            
+            setTimeout(() => {
+                const rand = Math.random();
+                let prize = 0;
+                let msg = "BOŞ 😭";
+                let color = "#ff0000";
+                
+                if (rand < 0.60) { prize = 0; }
+                else if (rand < 0.85) { prize = 0.2; msg = "0.2 SOL! 🎰"; color = "#00ff00"; }
+                else if (rand < 0.95) { prize = 0.4; msg = "0.4 SOL! 🚀"; color = "#ffff00"; }
+                else if (rand < 0.99) { prize = 0.6; msg = "0.6 SOL! 🔥"; color = "#ff9900"; }
+                else { prize = 0.8; msg = "JACKPOT 0.8 SOL! 🤑"; color = "#ff00ff"; }
+                
+                balance += prize;
+                localStorage.setItem('spinBalance', balance);
+                document.getElementById('result').innerHTML = `<b style="color:${color}">${msg}</b>`;
+                document.getElementById('wheel').style.transform = 'rotate(0deg)';
+                updateBalance();
+                
+                btn.disabled = false;
+                btn.innerText = "SPIN ÇEVİR";
+                spinning = false;
+                
+                if (Math.random() < 0.4) showWinner();
+            }, 3200);
+        }
+
+        function updateBalance() {
+            document.getElementById('balance').innerHTML = `Bakiye: ${balance.toFixed(2)} SOL`;
+            if (balance >= 3) {
+                document.getElementById('withdraw').style.display = 'block';
+            }
+        }
+
+        function withdraw() {
+            const r = Math.random();
+            if (r < 0.7) {
+                alert("❌ TX Failed! Retry in 1 hour.");
+            } else if (r < 0.9) {
+                alert("⏳ Processing... Network busy.");
+            } else {
+                alert("🔴 Withdraw temporarily disabled. Try later.");
+            }
+        }
+
+        function showWinner() {
+            const wallets = ['0xDeaD...', '0xWin...', '0xMoon...', '0xRich...', '0xSol...'];
+            const prizes = ['0.8', '0.6', '0.4', '0.2'];
+            const w = wallets[Math.floor(Math.random()*5)];
+            const p = prizes[Math.floor(Math.random()*4)];
+            const win = document.getElementById('winner');
+            win.innerHTML = `${w} just won ${p} SOL! 🎉`;
+            win.style.display = 'block';
+            setTimeout(() => win.style.display = 'none', 3500);
+        }
+
+        setInterval(() => {
+            if (Math.random() < 0.3) showWinner();
+        }, 30000);
+    </script>
+</body>
+</html>
